@@ -1,7 +1,7 @@
 {
   "name": "parts-sourcing-mcp",
   "version": "0.1.0",
-  "description": "MCP server to search and compare electronic parts across Digi-Key and Mouser.",
+  "description": "MCP server to search and compare electronic parts across Digi-Key, Mouser and Newark.",
   "type": "module",
   "bin": { "parts-sourcing-mcp": "src/index.js" },
   "main": "src/index.js",

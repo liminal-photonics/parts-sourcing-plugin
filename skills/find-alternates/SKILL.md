@@ -1,6 +1,6 @@
 ---
 name: find-alternates
-description: Use when the user needs a second source, a replacement for an EOL or out-of-stock part, or drop-in alternates for a component, checked against Digi-Key and Mouser.
+description: Use when the user needs a second source, a replacement for an EOL or out-of-stock part, or drop-in alternates for a component, checked against Digi-Key, Mouser and Newark.
 ---
 
 # Find alternates
