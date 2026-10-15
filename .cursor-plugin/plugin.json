@@ -2,12 +2,12 @@
   "name": "parts-sourcing",
   "displayName": "Parts Sourcing (Digi-Key + Mouser)",
   "version": "0.1.0",
-  "description": "Search, price and compare electronic components across Digi-Key and Mouser side by side: price breaks, stock, lead time, lifecycle, country of origin when the distributor reports it, and datasheets. Bring your own API keys.",
+  "description": "Search, price and compare electronic components across Digi-Key and Mouser side by side: price breaks, stock, lead time, lifecycle and datasheets. Reports country of origin only when the distributor provides it (Digi-Key's v4 API usually doesn't). Bring your own API keys.",
   "author": {
     "name": "Liminal Photonics"
   },
-  "homepage": "https://github.com/Roo2468/parts-sourcing-plugin",
-  "repository": "https://github.com/Roo2468/parts-sourcing-plugin",
+  "homepage": "https://github.com/liminal-photonics/parts-sourcing-plugin",
+  "repository": "https://github.com/liminal-photonics/parts-sourcing-plugin",
   "license": "MIT",
   "logo": "assets/logo.svg",
   "keywords": ["electronics", "components", "bom", "digikey", "mouser", "sourcing", "hardware", "mcp"],

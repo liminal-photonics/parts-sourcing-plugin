@@ -12,7 +12,7 @@ A Grok Bot / Cursor plugin that searches, prices and compares electronic compone
 | --- | --- |
 | `search_parts` | Keyword search on both distributors, e.g. `10k resistor 0603 1%` |
 | `get_part_details` | Look up one part by manufacturer or distributor part number |
-| `compare_distributors` | Price at each quantity, stock, lead time, lifecycle, country of origin (when reported), datasheet; flags single-source, EOL and zero stock |
+| `compare_distributors` | Price at each quantity, stock, lead time, lifecycle, country of origin only when the distributor provides it, datasheet; flags single-source, EOL and zero stock |
 | `sourcing_status` | Shows which API keys are configured |
 
 **Skills**
@@ -32,7 +32,7 @@ Install **Parts Sourcing** from the Grok Bot or Cursor plugin marketplace. To ru
   "mcpServers": {
     "parts-sourcing": {
       "command": "npx",
-      "args": ["-y", "github:Roo2468/parts-sourcing-plugin"],
+      "args": ["-y", "github:liminal-photonics/parts-sourcing-plugin"],
       "env": {
         "DIGIKEY_CLIENT_ID": "...",
         "DIGIKEY_CLIENT_SECRET": "...",
@@ -69,7 +69,7 @@ Set them as environment variables where your agent runs (the plugin's `mcp.json`
 ## Data notes
 
 - Prices are list prices at query time, before tax, shipping and tariffs.
-- Digi-Key's v4 API doesn't return country of origin. Mouser returns it only for some parts. The tools report `null` with a note and never guess.
+- Country of origin is reported only when the distributor provides it. Digi-Key's v4 API usually doesn't, and Mouser includes it only for some parts. Otherwise the tools return `null` with a note.
 - Mouser leaves lifecycle blank for most active parts. Blank means "not stated".
 - Lead times come straight from each distributor: Digi-Key reports manufacturer lead weeks and Mouser reports its own lead-time text.
 
