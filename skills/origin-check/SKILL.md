@@ -10,7 +10,7 @@ Report what the distributor data says about country of origin and nothing more.
 ## Steps
 
 1. For each part, call `compare_distributors` (or `get_part_details`).
-2. Read `countryOfOrigin` and `countryOfOriginNote` for each distributor. Digi-Key's Product Information API v4 does not return COO; Mouser returns it only when a compliance field carries it. HTS and ECCN codes, when present, are trade classifications, not origin.
+2. Read `countryOfOrigin` and `countryOfOriginNote` for each distributor. Digi-Key's Product Information API v4 does not return COO; Mouser and Newark return it only when their product data carries it. HTS and ECCN codes, when present, are trade classifications, not origin.
 3. Report per part: COO per distributor, or "not provided by the API".
 
 ## Rules

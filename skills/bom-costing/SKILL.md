@@ -1,6 +1,6 @@
 ---
 name: bom-costing
-description: Use when the user wants to price a bill of materials (BOM) at one or more build quantities using Digi-Key and Mouser, or asks which BOM lines are risky (single source, end of life, low stock).
+description: Use when the user wants to price a bill of materials (BOM) at one or more build quantities using Digi-Key, Mouser and Newark, or asks which BOM lines are risky (single source, end of life, low stock).
 ---
 
 # BOM costing

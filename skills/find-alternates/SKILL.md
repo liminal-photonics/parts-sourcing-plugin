@@ -10,7 +10,7 @@ Find candidate drop-in replacements and say exactly what still has to be verifie
 ## Steps
 
 1. Look up the original with `get_part_details`. Pull its key parameters from the description and datasheet: function, package/footprint, value and tolerance, voltage/current/power ratings, temperature range, pinout, and any qualification (e.g. AEC-Q200).
-2. Build 2–4 keyword searches from those parameters (e.g. "10k 1% 0603 thick film 0.1W") and call `search_parts` on both distributors.
+2. Build 2–4 keyword searches from those parameters (e.g. "10k 1% 0603 thick film 0.1W") and call `search_parts` on all configured distributors.
 3. Keep candidates that are Active, in stock, and match the package and core ratings. Drop anything that only matches loosely.
 4. For the best 3–5, call `compare_distributors` to show price and stock side by side.
 

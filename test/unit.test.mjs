@@ -27,10 +27,40 @@ test("digikey normalize falls back to variation stock and never invents origin",
 
 test("missing keys are skipped gracefully", async () => {
   const saved = { ...process.env };
-  delete process.env.MOUSER_API_KEY; delete process.env.DIGIKEY_CLIENT_ID; delete process.env.DIGIKEY_CLIENT_SECRET;
+  delete process.env.MOUSER_API_KEY; delete process.env.NEWARK_API_KEY; delete process.env.DIGIKEY_CLIENT_ID; delete process.env.DIGIKEY_CLIENT_SECRET;
   const r = await searchParts({ keyword: "x" });
   assert.deepEqual(r.results, {});
-  assert.equal(r.notes.length, 2);
+  assert.equal(r.notes.length, 3);
   assert.match(status().mouser, /missing/);
   Object.assign(process.env, saved);
+});
+
+import { normalizeNewark } from "../src/newark.js";
+import { getPartDetails } from "../src/core.js";
+
+test("newark normalize maps element14 fields and never invents origin", () => {
+  const n = normalizeNewark({
+    sku: "01AB1234", displayName: "RES 10K 1% 0603", translatedManufacturerPartNumber: "RC0603FR-0710KL", brandName: "YAGEO",
+    stock: { level: 5000, leastLeadTime: 21, status: 1 }, productStatus: "STOCKED",
+    prices: [{ from: 1, to: 99, cost: 0.1 }, { from: 100, to: 999, cost: "0.012" }],
+    datasheets: [{ type: "T", url: "https://example.com/ds.pdf" }],
+  });
+  assert.equal(n.distributor, "Newark");
+  assert.equal(n.stock, 5000);
+  assert.equal(n.leadTime, "21 days");
+  assert.equal(n.priceBreaks[1].unitPrice, 0.012);
+  assert.equal(n.datasheetUrl, "https://example.com/ds.pdf");
+  assert.equal(n.countryOfOrigin, null);
+  assert.equal(n.discontinued, false);
+  assert.equal(normalizeNewark({ productStatus: "NO_LONGER_MANUFACTURED" }).endOfLife, true);
+  assert.equal(normalizeNewark(null), null);
+});
+
+test("newark is skipped cleanly when NEWARK_API_KEY is missing", async () => {
+  const saved = process.env.NEWARK_API_KEY;
+  delete process.env.NEWARK_API_KEY;
+  const r = await getPartDetails({ partNumber: "X", distributors: ["newark"] });
+  assert.deepEqual(r.results, {});
+  assert.match(r.notes[0], /Newark skipped: set NEWARK_API_KEY/);
+  if (saved) process.env.NEWARK_API_KEY = saved;
 });

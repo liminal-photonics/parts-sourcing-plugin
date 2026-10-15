@@ -1,9 +1,11 @@
 import { digikeyConfigured, digikeySearch, digikeyDetails } from "./digikey.js";
 import { mouserConfigured, mouserSearch, mouserDetails } from "./mouser.js";
+import { newarkConfigured, newarkSearch, newarkDetails } from "./newark.js";
 
 const SOURCES = {
   digikey: { name: "Digi-Key", configured: digikeyConfigured, search: digikeySearch, details: digikeyDetails, env: "DIGIKEY_CLIENT_ID and DIGIKEY_CLIENT_SECRET" },
   mouser: { name: "Mouser", configured: mouserConfigured, search: mouserSearch, details: mouserDetails, env: "MOUSER_API_KEY" },
+  newark: { name: "Newark", configured: newarkConfigured, search: newarkSearch, details: newarkDetails, env: "NEWARK_API_KEY" },
 };
 
 function pick(distributors) {

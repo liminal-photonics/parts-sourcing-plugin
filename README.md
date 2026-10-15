@@ -1,6 +1,6 @@
-# Parts Sourcing (Digi-Key + Mouser)
+# Parts Sourcing (Digi-Key, Mouser, Newark)
 
-A Grok Bot / Cursor plugin that searches, prices and compares electronic components across **Digi-Key** and **Mouser** side by side. It bundles a local MCP server and three skills.
+A Grok Bot / Cursor plugin that searches, prices and compares electronic components across **Digi-Key**, **Mouser** and **Newark** (element14) side by side. It bundles a local MCP server and three skills.
 
 <img src="assets/logo.svg" width="96" alt="logo">
 
@@ -10,7 +10,7 @@ A Grok Bot / Cursor plugin that searches, prices and compares electronic compone
 
 | Tool | What it does |
 | --- | --- |
-| `search_parts` | Keyword search on both distributors, e.g. `10k resistor 0603 1%` |
+| `search_parts` | Keyword search on all configured distributors, e.g. `10k resistor 0603 1%` |
 | `get_part_details` | Look up one part by manufacturer or distributor part number |
 | `compare_distributors` | Price at each quantity, stock, lead time, lifecycle, country of origin only when the distributor provides it, datasheet; flags single-source, EOL and zero stock |
 | `sourcing_status` | Shows which API keys are configured |
@@ -21,7 +21,7 @@ A Grok Bot / Cursor plugin that searches, prices and compares electronic compone
 - `find-alternates`: find drop-in candidates and list what you still need to verify
 - `origin-check`: report country of origin exactly as the data gives it, with no guessing
 
-If only one distributor's keys are set, the other is skipped with a note and everything else still works.
+If a distributor's key is not set, that distributor is skipped with a note and everything else still works.
 
 ## Install
 
@@ -36,7 +36,8 @@ Install **Parts Sourcing** from the Grok Bot or Cursor plugin marketplace. To ru
       "env": {
         "DIGIKEY_CLIENT_ID": "...",
         "DIGIKEY_CLIENT_SECRET": "...",
-        "MOUSER_API_KEY": "..."
+        "MOUSER_API_KEY": "...",
+        "NEWARK_API_KEY": "..."
       }
     }
   }
@@ -56,11 +57,17 @@ You need your own keys. This repo stores none, and calls go straight from your m
 1. Sign in at https://www.mouser.com/api-search/ and request a **Search API** key.
 2. Put it in `MOUSER_API_KEY`.
 
+**Newark / element14** (Product Search API)
+1. Register at https://partner.element14.com (Register link, top right) and confirm your email.
+2. Sign in, open **My Account → Applications → Register a new application**, pick the Product Search API, and accept the terms.
+3. Copy the issued API key into `NEWARK_API_KEY`.
+4. Optional: `NEWARK_STORE` picks the store (default `www.newark.com`; e.g. `uk.farnell.com`, `de.farnell.com`, `au.element14.com`). Prices come in that store's currency.
+
 Set them as environment variables where your agent runs (the plugin's `mcp.json` reads `${env:...}`). Optional: `DIGIKEY_LOCALE_SITE` (default `US`) and `DIGIKEY_CURRENCY` (default `USD`).
 
 ## Examples
 
-- "Find a 10k 0603 1% resistor in stock at both Digi-Key and Mouser."
+- "Find a 10k 0603 1% resistor in stock at Digi-Key, Mouser and Newark."
 - "Compare RC0603FR-0710KL at 100 and 1000 pieces."
 - "Price this BOM at 10, 100 and 500 boards and flag risky lines." (attach a CSV)
 - "Find a second source for this nRF52840 module."
@@ -69,16 +76,16 @@ Set them as environment variables where your agent runs (the plugin's `mcp.json`
 ## Data notes
 
 - Prices are list prices at query time, before tax, shipping and tariffs.
-- Country of origin is reported only when the distributor provides it. Digi-Key's v4 API usually doesn't, and Mouser includes it only for some parts. Otherwise the tools return `null` with a note.
+- Country of origin is reported only when the distributor provides it. Digi-Key's v4 API usually doesn't, and Mouser and Newark include it only for some parts. Otherwise the tools return `null` with a note.
 - Mouser leaves lifecycle blank for most active parts. Blank means "not stated".
-- Lead times come straight from each distributor: Digi-Key reports manufacturer lead weeks and Mouser reports its own lead-time text.
+- Lead times come straight from each distributor: Digi-Key reports manufacturer lead weeks Mouser reports its own lead-time text, and Newark reports its shortest lead time in days.
 
 ## Development
 
 ```bash
 npm install
 npm test                 # offline unit tests
-MOUSER_API_KEY=... DIGIKEY_CLIENT_ID=... DIGIKEY_CLIENT_SECRET=... npm run live   # live smoke test over stdio
+MOUSER_API_KEY=... NEWARK_API_KEY=... DIGIKEY_CLIENT_ID=... DIGIKEY_CLIENT_SECRET=... npm run live   # live smoke test over stdio
 ```
 
 ## License

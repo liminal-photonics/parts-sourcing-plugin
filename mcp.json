@@ -7,7 +7,9 @@
       "env": {
         "DIGIKEY_CLIENT_ID": "${env:DIGIKEY_CLIENT_ID}",
         "DIGIKEY_CLIENT_SECRET": "${env:DIGIKEY_CLIENT_SECRET}",
-        "MOUSER_API_KEY": "${env:MOUSER_API_KEY}"
+        "MOUSER_API_KEY": "${env:MOUSER_API_KEY}",
+        "NEWARK_API_KEY": "${env:NEWARK_API_KEY}",
+        "NEWARK_STORE": "${env:NEWARK_STORE}"
       }
     }
   }
