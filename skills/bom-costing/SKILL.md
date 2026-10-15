@@ -15,7 +15,7 @@ Price a BOM at the build quantities the user gives, using the `parts-sourcing` M
 4. Build a table per build quantity: line, MPN, qty needed, best in-stock distributor, unit price at the matching break, extended price, stock. Sum the total and the per-board cost.
 5. Flag each line that is:
    - **Single source**: found at only one distributor checked.
-   - **EOL / NRND / obsolete**: any lifecycle value other than Active, or discontinued/end-of-life true. Mouser often leaves lifecycle blank; report that as "not stated", not "Active".
+   - **EOL / NRND / obsolete**: any lifecycle value other than Active, or discontinued/end-of-life true. Mouser often leaves lifecycle blank; report that as "not stated", not "Active". Newark's value is a stocking status (e.g. NO_LONGER_STOCKED means Newark stopped stocking it, not that it is EOL).
    - **Low stock**: stock below 2× the quantity needed for the largest build.
    - **Not found**: no match at either distributor.
 6. Note that prices are distributor list prices at query time, in the account's currency, before tax, shipping, tariffs and reel or MOQ effects. Note any line where the quantity is below the first price break.

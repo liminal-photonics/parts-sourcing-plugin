@@ -28,7 +28,9 @@ async function e14(term, limit) {
   return wrapper.products || [];
 }
 
-const EOL_STATUS = /NO_LONGER|OBSOLETE|DISCONTINUED|END_OF_LIFE|NO_LONGER_MANUFACTURED/i;
+// productStatus is Newark's stocking status (STOCKED, DIRECT_SHIP, NO_LONGER_STOCKED, ...), not the
+// manufacturer lifecycle. Only these values mean the part itself is end of life.
+const EOL_STATUS = /NO_LONGER_MANUFACTURED|OBSOLETE|DISCONTINUED|END_OF_LIFE/i;
 
 export function normalizeNewark(p) {
   if (!p) return null;
@@ -37,6 +39,10 @@ export function normalizeNewark(p) {
   const lead = p.stock?.leastLeadTime;
   const coo = p.countryOfOrigin || p.coo || null;
   const ds = (p.datasheets || []).find((d) => d.url) || null;
+  const attr = (label) => (p.attributes || []).find((a) => a.attributeLabel === label)?.attributeValue ?? null;
+  const moq = p.translatedMinimumOrderQuality ?? p.translatedMinimumOrderQuantity ?? null;
+  const breaks = (p.prices || []).map((b) => ({ qty: b.from, unitPrice: typeof b.cost === "number" ? b.cost : parseFloat(b.cost) }));
+  if (moq && breaks.length && breaks[0].qty < moq) breaks[0] = { ...breaks[0], qty: moq };
   return {
     distributor: "Newark",
     distributorPartNumber: p.sku || null,
@@ -44,19 +50,21 @@ export function normalizeNewark(p) {
     manufacturerPartNumber: p.translatedManufacturerPartNumber || null,
     description: p.displayName || null,
     stock: typeof stock === "number" ? stock : stock != null ? parseInt(stock, 10) || 0 : null,
-    leadTime: lead ? `${lead} days` : null,
-    lifecycle: status ? String(status) : null,
+    leadTime: lead ? `${lead} days (for quantities beyond stock)` : null,
+    stockByWarehouse: (p.stock?.regionalBreakdown || []).map((w) => ({ warehouse: w.warehouse, stock: w.level })),
+    lifecycle: status ? `${status} (Newark stocking status)` : null,
     discontinued: EOL_STATUS.test(String(status || "")),
     endOfLife: EOL_STATUS.test(String(status || "")),
     countryOfOrigin: coo,
     countryOfOriginNote: coo ? "From element14 product data" : "Not provided in element14 search response",
     packaging: p.packSize ? `pack of ${p.packSize}` : null,
-    minimumOrderQty: p.translatedMinimumOrderQuality ?? p.translatedMinimumOrderQuantity ?? null,
-    priceBreaks: (p.prices || []).map((b) => ({ qty: b.from, unitPrice: typeof b.cost === "number" ? b.cost : parseFloat(b.cost) })),
+    minimumOrderQty: moq,
+    priceBreaks: breaks,
     currency: "store currency",
     datasheetUrl: ds ? ds.url : null,
     productUrl: p.sku ? `https://${newarkStore()}/search?st=${encodeURIComponent(p.sku)}` : null,
     rohs: p.rohsStatusCode || null,
+    eccn: attr("usEccn"),
   };
 }
 
@@ -68,6 +76,14 @@ export async function newarkDetails(partNumber) {
   let parts = await e14(`manuPartNum:${partNumber}`, 10);
   if (!parts.length) parts = await e14(`id:${partNumber}`, 1); // Newark/Farnell order code
   const pn = partNumber.toUpperCase();
-  const exact = parts.find((p) => (p.translatedManufacturerPartNumber || "").toUpperCase() === pn || String(p.sku || "").toUpperCase() === pn);
-  return normalizeNewark(exact || parts[0]);
+  // MPN search is fuzzy and one MPN can have several Newark SKUs (cut tape, reel, legacy). Keep exact
+  // matches only. Prefer SKUs in stock, then the lowest minimum order (cut tape before full reel), then most stock.
+  const exact = parts.filter((p) => (p.translatedManufacturerPartNumber || "").toUpperCase() === pn || String(p.sku || "").toUpperCase() === pn);
+  if (!exact.length) return null;
+  const stk = (p) => p.stock?.level ?? p.inv ?? 0;
+  const moq = (p) => p.translatedMinimumOrderQuality ?? p.translatedMinimumOrderQuantity ?? 1;
+  exact.sort((a, b) => (stk(b) > 0) - (stk(a) > 0) || moq(a) - moq(b) || stk(b) - stk(a));
+  const best = normalizeNewark(exact[0]);
+  if (exact.length > 1) best.otherSkus = exact.slice(1).map((p) => ({ sku: p.sku, status: p.productStatus, stock: stk(p), minimumOrderQty: moq(p) }));
+  return best;
 }

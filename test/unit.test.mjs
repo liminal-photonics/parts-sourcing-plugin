@@ -38,21 +38,32 @@ test("missing keys are skipped gracefully", async () => {
 import { normalizeNewark } from "../src/newark.js";
 import { getPartDetails } from "../src/core.js";
 
-test("newark normalize maps element14 fields and never invents origin", () => {
+test("newark normalize matches a real element14 product shape and never invents origin", () => {
+  // Trimmed from a live manufacturerPartNumberSearchReturn product (www.newark.com, Oct 2026).
   const n = normalizeNewark({
-    sku: "01AB1234", displayName: "RES 10K 1% 0603", translatedManufacturerPartNumber: "RC0603FR-0710KL", brandName: "YAGEO",
-    stock: { level: 5000, leastLeadTime: 21, status: 1 }, productStatus: "STOCKED",
-    prices: [{ from: 1, to: 99, cost: 0.1 }, { from: 100, to: 999, cost: "0.012" }],
-    datasheets: [{ type: "T", url: "https://example.com/ds.pdf" }],
+    sku: "98K7338", displayName: "YAGEO - RC0603FR-0710KL - RES, THICK FILM, 10K, 1%, 0.1W, 0603",
+    productStatus: "DIRECT_SHIP", rohsStatusCode: "Y-EX", packSize: 1, inv: 2033697,
+    datasheets: [{ type: "T", url: "http://www.farnell.com/datasheets/3795017.pdf" }],
+    prices: [{ to: 24, from: 1, cost: 0.101 }, { to: 99, from: 25, cost: 0.05 }],
+    vendorName: "YAGEO", brandName: "YAGEO", translatedManufacturerPartNumber: "RC0603FR-0710KL", translatedMinimumOrderQuality: 1,
+    attributes: [{ attributeLabel: "usEccn", attributeValue: "EAR99" }],
+    stock: { level: 2033697, leastLeadTime: 178, status: 1, regionalBreakdown: [{ level: 1406178, warehouse: "UK" }, { level: 657580, warehouse: "US" }] },
   });
   assert.equal(n.distributor, "Newark");
-  assert.equal(n.stock, 5000);
-  assert.equal(n.leadTime, "21 days");
-  assert.equal(n.priceBreaks[1].unitPrice, 0.012);
-  assert.equal(n.datasheetUrl, "https://example.com/ds.pdf");
+  assert.equal(n.manufacturerPartNumber, "RC0603FR-0710KL");
+  assert.equal(n.stock, 2033697);
+  assert.deepEqual(n.stockByWarehouse, [{ warehouse: "UK", stock: 1406178 }, { warehouse: "US", stock: 657580 }]);
+  assert.match(n.leadTime, /^178 days/);
+  assert.equal(n.priceBreaks[1].unitPrice, 0.05);
+  assert.equal(n.eccn, "EAR99");
+  assert.equal(n.datasheetUrl, "http://www.farnell.com/datasheets/3795017.pdf");
   assert.equal(n.countryOfOrigin, null);
   assert.equal(n.discontinued, false);
+  // NO_LONGER_STOCKED is a Newark stocking status, not manufacturer end of life.
+  assert.equal(normalizeNewark({ productStatus: "NO_LONGER_STOCKED" }).endOfLife, false);
   assert.equal(normalizeNewark({ productStatus: "NO_LONGER_MANUFACTURED" }).endOfLife, true);
+  // Minimum order quantity above the first break moves the first break up.
+  assert.equal(normalizeNewark({ translatedMinimumOrderQuality: 5000, prices: [{ from: 1, cost: 0.005 }] }).priceBreaks[0].qty, 5000);
   assert.equal(normalizeNewark(null), null);
 });
 

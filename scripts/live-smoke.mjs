@@ -12,7 +12,7 @@ for (const kw of process.argv.slice(2).length ? process.argv.slice(2) : ["10k re
   console.log(`\n== search "${kw}"`, r.notes);
   for (const [d, list] of Object.entries(r.results)) for (const p of list) console.log(` ${d}: ${p.manufacturer} ${p.manufacturerPartNumber} | ${p.distributorPartNumber} | stock ${p.stock} | ${p.lifecycle} | 1pc ${p.priceBreaks[0]?.unitPrice ?? "-"} | COO ${p.countryOfOrigin ?? "n/a"}`);
 }
-for (const pn of ["RC0603FR-0710KL", "MDBT50Q-1MV2"]) {
+for (const pn of (process.env.SMOKE_PNS || "RC0603FR-0710KL,MDBT50Q-1MV2").split(",")) {
   const r = await call("compare_distributors", { partNumber: pn, quantities: [1, 100, 1000] });
   console.log(`\n== compare ${pn}`);
   console.log(JSON.stringify({ cheapestInStock: r.cheapestInStock, flags: r.flags, notes: r.notes, rows: r.rows.map(({ pricing, ...x }) => ({ ...x, pricing })) }, null, 1));

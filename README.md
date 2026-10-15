@@ -78,6 +78,7 @@ Set them as environment variables where your agent runs (the plugin's `mcp.json`
 - Prices are list prices at query time, before tax, shipping and tariffs.
 - Country of origin is reported only when the distributor provides it. Digi-Key's v4 API usually doesn't, and Mouser and Newark include it only for some parts. Otherwise the tools return `null` with a note.
 - Mouser leaves lifecycle blank for most active parts. Blank means "not stated".
+- Newark's status (STOCKED, DIRECT_SHIP, NO_LONGER_STOCKED, ...) is its own stocking status, not the manufacturer lifecycle. One MPN can have several Newark SKUs (cut tape, reel, legacy). The tools pick the in-stock SKU with the lowest minimum order, list the others in `otherSkus`, and show stock per warehouse (Newark stock can include UK warehouse stock).
 - Lead times come straight from each distributor: Digi-Key reports manufacturer lead weeks Mouser reports its own lead-time text, and Newark reports its shortest lead time in days.
 
 ## Development
