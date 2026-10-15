@@ -53,11 +53,22 @@ async function fanOut(distributors, fn) {
   return { results, notes };
 }
 
+export function compactResult(r) {
+  if (!r || typeof r !== "object") return r;
+  const { stockByPackaging, stockByWarehouse, countryOfOriginNote, ...rest } = r;
+  if (Array.isArray(rest.priceBreaks) && rest.priceBreaks.length > 6) rest.priceBreaks = rest.priceBreaks.slice(0, 6);
+  return rest;
+}
+
 export async function searchParts({ keyword, limit = 5, distributors } = {}) {
   keyword = requireText(keyword, "keyword");
-  limit = Math.min(50, Math.max(1, Math.floor(Number(limit)) || 5));
+  limit = Math.min(25, Math.max(1, Math.floor(Number(limit)) || 5));
   const { results, notes } = await fanOut(distributors, (s) => s.search(keyword, limit));
   for (const k of Object.keys(results)) if (!results[k].length) notes.push(`${SOURCES[k].name}: no results for "${keyword}".`);
+  // Keep search output small enough for a model's context (50 results x 3 distributors was ~270 KB):
+  // drop per-warehouse/per-packaging breakdowns and keep the first 6 price breaks. get_part_details has everything.
+  for (const k of Object.keys(results)) results[k] = results[k].map(compactResult);
+  if (Object.values(results).some((a) => a.length)) notes.push("Search results are trimmed (first 6 price breaks, no warehouse or packaging breakdown); use get_part_details or compare_distributors for one part's full data.");
   return { keyword, results, notes };
 }
 
@@ -87,6 +98,7 @@ export async function compareDistributors({ partNumber, quantities, distributors
     manufacturerPartNumber: r.manufacturerPartNumber,
     stock: r.stock,
     leadTime: r.leadTime,
+    leadTimeDays: r.leadTimeDays ?? null,
     lifecycle: r.lifecycle,
     discontinued: r.discontinued,
     countryOfOrigin: r.countryOfOrigin,

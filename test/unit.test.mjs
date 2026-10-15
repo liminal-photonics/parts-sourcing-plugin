@@ -202,3 +202,16 @@ test("edge cases: unusable price breaks, price formats, unknown stock", () => {
   assert.equal(normalizeMouser({}).stock, null);
   assert.equal(normalizeMouser({ Availability: "None" }).stock, 0);
 });
+
+test("round 3: one lead-time unit (days) at every distributor, compact search rows", async () => {
+  const { compactResult } = await import("../src/core.js");
+  const { normalizeNewark } = await import("../src/newark.js");
+  assert.equal(normalizeMouser({ LeadTime: "168 Days" }).leadTimeDays, 168);
+  assert.equal(normalizeMouser({ LeadTime: "12 Weeks" }).leadTimeDays, 84);
+  assert.equal(normalizeMouser({}).leadTimeDays, null);
+  assert.equal(normalizeDigikey({ ManufacturerLeadWeeks: "24" }).leadTimeDays, 168);
+  assert.equal(normalizeNewark({ stock: { leastLeadTime: 183 } }).leadTimeDays, 183);
+  const c = compactResult({ a: 1, stockByWarehouse: [1], stockByPackaging: [1], countryOfOriginNote: "x", priceBreaks: [1, 2, 3, 4, 5, 6, 7, 8] });
+  assert.deepEqual(c, { a: 1, priceBreaks: [1, 2, 3, 4, 5, 6] });
+});
+

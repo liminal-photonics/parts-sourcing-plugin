@@ -14,7 +14,7 @@ const TOOLS = [
   {
     name: "search_parts",
     description: "Search Digi-Key, Mouser and Newark by keyword (e.g. '10k 0603 resistor 1%'). Returns normalized results per distributor: MPN, manufacturer, stock, price breaks, lifecycle, lead time, datasheet.",
-    inputSchema: { type: "object", properties: { keyword: { type: "string", minLength: 1 }, limit: { type: "integer", minimum: 1, maximum: 50, default: 5 }, distributors: distributorsProp }, required: ["keyword"] },
+    inputSchema: { type: "object", properties: { keyword: { type: "string", minLength: 1 }, limit: { type: "integer", minimum: 1, maximum: 25, default: 5, description: "Results per distributor (up to 25)." }, distributors: distributorsProp }, required: ["keyword"] },
   },
   {
     name: "get_part_details",
@@ -44,7 +44,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     else if (name === "compare_distributors") out = await compareDistributors(a);
     else if (name === "sourcing_status") out = status();
     else throw new Error(`Unknown tool ${name}`);
-    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+    return { content: [{ type: "text", text: (() => { const t = JSON.stringify(out, null, 2); return t.length > 40000 ? JSON.stringify(out) : t; })() }] };
   } catch (e) {
     return { isError: true, content: [{ type: "text", text: e.message }] };
   }
