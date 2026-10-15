@@ -1,4 +1,5 @@
 // element14 / Newark / Farnell Product Search API client (API key from partner.element14.com).
+import { request } from "./http.js";
 const BASE = process.env.NEWARK_API_BASE || "https://api.element14.com/catalog/products";
 
 export function newarkConfigured() {
@@ -19,7 +20,7 @@ async function e14(term, limit) {
     "callInfo.responseDataFormat": "json",
     "callInfo.apiKey": process.env.NEWARK_API_KEY,
   });
-  const res = await fetch(`${BASE}?${q}`, { headers: { Accept: "application/json" } });
+  const res = await request("Newark", `${BASE}?${q}`, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`Newark HTTP ${res.status}`);
   const j = await res.json();
   if (j.Fault) throw new Error(`Newark: ${j.Fault.faultstring || "API fault"}`);
@@ -60,7 +61,7 @@ export function normalizeNewark(p) {
     packaging: p.packSize ? `pack of ${p.packSize}` : null,
     minimumOrderQty: moq,
     priceBreaks: breaks,
-    currency: "store currency",
+    currency: newarkStore() === "www.newark.com" ? "USD" : `${newarkStore()} store currency`,
     datasheetUrl: ds ? ds.url : null,
     productUrl: p.sku ? `https://${newarkStore()}/search?st=${encodeURIComponent(p.sku)}` : null,
     rohs: p.rohsStatusCode || null,

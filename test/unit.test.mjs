@@ -30,7 +30,8 @@ test("missing keys are skipped gracefully", async () => {
   delete process.env.MOUSER_API_KEY; delete process.env.NEWARK_API_KEY; delete process.env.DIGIKEY_CLIENT_ID; delete process.env.DIGIKEY_CLIENT_SECRET;
   const r = await searchParts({ keyword: "x" });
   assert.deepEqual(r.results, {});
-  assert.equal(r.notes.length, 3);
+  assert.equal(r.notes.length, 4);
+  assert.match(r.notes.join(" "), /No distributor was queried/);
   assert.match(status().mouser, /missing/);
   Object.assign(process.env, saved);
 });
@@ -99,5 +100,33 @@ test("single-source flag only when two or more distributors were queried", async
     globalThis.fetch = realFetch;
     for (const k of ["MOUSER_API_KEY", "NEWARK_API_KEY"]) delete process.env[k];
     Object.assign(process.env, saved);
+  }
+});
+
+import { cleanQuantities } from "../src/core.js";
+import { mouserDetails } from "../src/mouser.js";
+
+test("input validation: quantities, empty part numbers, unknown distributors", async () => {
+  assert.deepEqual(cleanQuantities([100, "10", 10, 1]), [1, 10, 100]);
+  assert.deepEqual(cleanQuantities(undefined), [1, 10, 100, 1000]);
+  for (const bad of [[0], [-5], [1.5], ["abc"], []]) assert.throws(() => cleanQuantities(bad), /whole numbers/);
+  await assert.rejects(compareDistributors({ partNumber: "   " }), /partNumber is required/);
+  await assert.rejects(searchParts({ keyword: "" }), /keyword is required/);
+  const r = await getPartDetails({ partNumber: "X", distributors: ["arrow"] });
+  assert.match(r.notes.join(" "), /Unknown distributor "arrow"/);
+});
+
+test("mouser near matches are not reported as found; 429 gives a rate-limit message", async () => {
+  const saved = process.env.MOUSER_API_KEY;
+  const realFetch = globalThis.fetch;
+  process.env.MOUSER_API_KEY = "test";
+  try {
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ Errors: [], SearchResults: { Parts: [{ MouserPartNumber: "1-ABCD", ManufacturerPartNumber: "ABCD" }] } }) });
+    assert.equal(await mouserDetails("ABC"), null);
+    globalThis.fetch = async () => ({ ok: false, status: 429, headers: new Map([["retry-after", "60"]]) });
+    await assert.rejects(mouserDetails("ABC"), /rate limit reached; retry after 60 s/);
+  } finally {
+    globalThis.fetch = realFetch;
+    if (saved) process.env.MOUSER_API_KEY = saved; else delete process.env.MOUSER_API_KEY;
   }
 });

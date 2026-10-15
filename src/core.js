@@ -8,16 +8,34 @@ const SOURCES = {
   newark: { name: "Newark", configured: newarkConfigured, search: newarkSearch, details: newarkDetails, env: "NEWARK_API_KEY" },
 };
 
-function pick(distributors) {
-  const keys = distributors && distributors.length ? distributors.map((d) => d.toLowerCase().replace(/[^a-z]/g, "")) : Object.keys(SOURCES);
+function pick(distributors, notes) {
+  if (!Array.isArray(distributors) || !distributors.length) return Object.keys(SOURCES);
+  const keys = [...new Set(distributors.map((d) => String(d).toLowerCase().replace(/[^a-z]/g, "")))];
+  for (const k of keys) if (!SOURCES[k]) notes.push(`Unknown distributor "${k}" ignored (use digikey, mouser or newark).`);
   return keys.filter((k) => SOURCES[k]);
+}
+
+function requireText(v, field) {
+  const s = typeof v === "string" ? v.trim() : "";
+  if (!s) throw new Error(`${field} is required and must be a non-empty string.`);
+  return s;
+}
+
+export function cleanQuantities(quantities) {
+  if (quantities == null) return [1, 10, 100, 1000];
+  const list = Array.isArray(quantities) ? quantities : [quantities];
+  const out = [...new Set(list.map(Number))];
+  if (!out.length || out.some((q) => !Number.isInteger(q) || q < 1)) throw new Error("quantities must be whole numbers of 1 or more.");
+  if (out.length > 20) throw new Error("Give at most 20 quantities.");
+  return out.sort((a, b) => a - b);
 }
 
 async function fanOut(distributors, fn) {
   const results = {};
   const notes = [];
+  const picked = pick(distributors, notes);
   await Promise.all(
-    pick(distributors).map(async (k) => {
+    picked.map(async (k) => {
       const s = SOURCES[k];
       if (!s.configured()) {
         notes.push(`${s.name} skipped: set ${s.env} to enable it.`);
@@ -30,15 +48,20 @@ async function fanOut(distributors, fn) {
       }
     })
   );
+  if (!picked.some((k) => SOURCES[k].configured())) notes.push("No distributor was queried. Set at least one distributor API key (see sourcing_status).");
   return { results, notes };
 }
 
-export async function searchParts({ keyword, limit = 5, distributors }) {
+export async function searchParts({ keyword, limit = 5, distributors } = {}) {
+  keyword = requireText(keyword, "keyword");
+  limit = Math.min(50, Math.max(1, Math.floor(Number(limit)) || 5));
   const { results, notes } = await fanOut(distributors, (s) => s.search(keyword, limit));
+  for (const k of Object.keys(results)) if (!results[k].length) notes.push(`${SOURCES[k].name}: no results for "${keyword}".`);
   return { keyword, results, notes };
 }
 
-export async function getPartDetails({ partNumber, distributors }) {
+export async function getPartDetails({ partNumber, distributors } = {}) {
+  partNumber = requireText(partNumber, "partNumber");
   const { results, notes } = await fanOut(distributors, (s) => s.details(partNumber));
   for (const k of Object.keys(results)) if (!results[k]) notes.push(`${SOURCES[k].name}: no match for ${partNumber}.`);
   return { partNumber, results, notes };
@@ -52,7 +75,8 @@ export function priceAt(breaks, qty) {
   return best ? { breakQty: best.qty, unitPrice: best.unitPrice, extended: +(best.unitPrice * qty).toFixed(4) } : { belowMinimum: true, minimumBreak: sorted[0].qty };
 }
 
-export async function compareDistributors({ partNumber, quantities = [1, 10, 100, 1000], distributors }) {
+export async function compareDistributors({ partNumber, quantities, distributors } = {}) {
+  quantities = cleanQuantities(quantities);
   const d = await getPartDetails({ partNumber, distributors });
   const rows = Object.values(d.results).filter(Boolean).map((r) => ({
     distributor: r.distributor,

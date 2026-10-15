@@ -1,4 +1,5 @@
 // Digi-Key Product Information API v4 client (OAuth2 client credentials).
+import { request } from "./http.js";
 const BASE = process.env.DIGIKEY_API_BASE || "https://api.digikey.com";
 let tokenCache = { token: null, expires: 0 };
 
@@ -13,7 +14,7 @@ async function getToken() {
     client_secret: process.env.DIGIKEY_CLIENT_SECRET,
     grant_type: "client_credentials",
   });
-  const res = await fetch(`${BASE}/v1/oauth2/token`, {
+  const res = await request("Digi-Key", `${BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -24,9 +25,9 @@ async function getToken() {
   return tokenCache.token;
 }
 
-async function dk(path, init = {}) {
+async function dk(path, init = {}, retried = false) {
   const token = await getToken();
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await request("Digi-Key", `${BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -39,6 +40,10 @@ async function dk(path, init = {}) {
       ...(init.headers || {}),
     },
   });
+  if (res.status === 401 && !retried) {
+    tokenCache = { token: null, expires: 0 }; // token revoked or expired early: get a new one once
+    return dk(path, init, true);
+  }
   if (res.status === 404) return null;
   if (!res.ok) {
     const t = await res.text().catch(() => "");

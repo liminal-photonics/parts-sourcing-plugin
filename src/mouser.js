@@ -1,4 +1,5 @@
 // Mouser Search API v1 client (API key).
+import { request } from "./http.js";
 const BASE = process.env.MOUSER_API_BASE || "https://api.mouser.com/api/v1";
 
 export function mouserConfigured() {
@@ -7,7 +8,7 @@ export function mouserConfigured() {
 
 async function ms(path, body) {
   const url = `${BASE}${path}?apiKey=${encodeURIComponent(process.env.MOUSER_API_KEY)}`;
-  const res = await fetch(url, {
+  const res = await request("Mouser", url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),
@@ -66,5 +67,6 @@ export async function mouserDetails(partNumber) {
   const parts = j.SearchResults?.Parts || [];
   const pn = partNumber.toUpperCase();
   const exact = parts.find((p) => (p.ManufacturerPartNumber || "").toUpperCase() === pn || (p.MouserPartNumber || "").toUpperCase() === pn);
-  return normalizeMouser(exact || parts[0]);
+  // Mouser can return near matches; only an exact MPN or Mouser PN counts as found.
+  return exact ? normalizeMouser(exact) : null;
 }

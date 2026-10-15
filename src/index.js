@@ -14,17 +14,17 @@ const TOOLS = [
   {
     name: "search_parts",
     description: "Search Digi-Key, Mouser and Newark by keyword (e.g. '10k 0603 resistor 1%'). Returns normalized results per distributor: MPN, manufacturer, stock, price breaks, lifecycle, lead time, datasheet.",
-    inputSchema: { type: "object", properties: { keyword: { type: "string" }, limit: { type: "integer", minimum: 1, maximum: 50, default: 5 }, distributors: distributorsProp }, required: ["keyword"] },
+    inputSchema: { type: "object", properties: { keyword: { type: "string", minLength: 1 }, limit: { type: "integer", minimum: 1, maximum: 50, default: 5 }, distributors: distributorsProp }, required: ["keyword"] },
   },
   {
     name: "get_part_details",
     description: "Look up one part by manufacturer part number or distributor part number on Digi-Key, Mouser and Newark.",
-    inputSchema: { type: "object", properties: { partNumber: { type: "string" }, distributors: distributorsProp }, required: ["partNumber"] },
+    inputSchema: { type: "object", properties: { partNumber: { type: "string", minLength: 1 }, distributors: distributorsProp }, required: ["partNumber"] },
   },
   {
     name: "compare_distributors",
     description: "Compare one part across Digi-Key, Mouser and Newark: unit price at each quantity, stock, lead time, lifecycle, country of origin (only when the API returns it), datasheet. Flags single-source, EOL and zero stock.",
-    inputSchema: { type: "object", properties: { partNumber: { type: "string" }, quantities: { type: "array", items: { type: "integer", minimum: 1 }, default: [1, 10, 100, 1000] }, distributors: distributorsProp }, required: ["partNumber"] },
+    inputSchema: { type: "object", properties: { partNumber: { type: "string", minLength: 1 }, quantities: { type: "array", items: { type: "integer", minimum: 1 }, minItems: 1, maxItems: 20, default: [1, 10, 100, 1000] }, distributors: distributorsProp }, required: ["partNumber"] },
   },
   {
     name: "sourcing_status",
