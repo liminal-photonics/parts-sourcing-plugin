@@ -79,7 +79,8 @@ export async function compareDistributors({ partNumber, quantities = [1, 10, 100
     cheapest[q] = best || "No distributor has this quantity in stock at a listed price";
   }
   const flags = [];
-  if (rows.length === 1) flags.push(`Only found at ${rows[0].distributor} (single source among checked distributors).`);
+  const queried = Object.keys(d.results).length; // configured, not filtered out, and answered
+  if (queried >= 2 && rows.length === 1) flags.push(`Only found at ${rows[0].distributor} (single source among checked distributors).`);
   for (const r of rows) {
     if (r.discontinued || /obsolete|not recommended|eol|end of life|last time/i.test(r.lifecycle || "")) flags.push(`${r.distributor}: lifecycle "${r.lifecycle}".`);
     if ((r.stock ?? 0) === 0) flags.push(`${r.distributor}: zero stock.`);

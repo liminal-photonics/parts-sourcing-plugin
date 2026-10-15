@@ -75,3 +75,29 @@ test("newark is skipped cleanly when NEWARK_API_KEY is missing", async () => {
   assert.match(r.notes[0], /Newark skipped: set NEWARK_API_KEY/);
   if (saved) process.env.NEWARK_API_KEY = saved;
 });
+
+import { compareDistributors } from "../src/core.js";
+
+test("single-source flag only when two or more distributors were queried", async () => {
+  const saved = { ...process.env };
+  const realFetch = globalThis.fetch;
+  delete process.env.DIGIKEY_CLIENT_ID; delete process.env.DIGIKEY_CLIENT_SECRET;
+  process.env.MOUSER_API_KEY = "test"; process.env.NEWARK_API_KEY = "test";
+  globalThis.fetch = async (url) => {
+    const body = String(url).includes("mouser")
+      ? { Errors: [], SearchResults: { Parts: [{ MouserPartNumber: "1-ABC", ManufacturerPartNumber: "ABC", AvailabilityInStock: "10", PriceBreaks: [{ Quantity: 1, Price: "$1.00" }] }] } }
+      : { manufacturerPartNumberSearchReturn: { numberOfResults: 0, products: [] }, premierFarnellPartNumberReturn: { numberOfResults: 0, products: [] } };
+    return { ok: true, status: 200, json: async () => body };
+  };
+  try {
+    const one = await compareDistributors({ partNumber: "ABC", quantities: [1], distributors: ["mouser"] });
+    assert.equal(one.rows.length, 1);
+    assert.ok(!one.flags.some((f) => /single source/.test(f)), "no single-source flag when only one distributor was queried");
+    const two = await compareDistributors({ partNumber: "ABC", quantities: [1] }); // Digi-Key unconfigured; Mouser + Newark queried
+    assert.ok(two.flags.some((f) => /Only found at Mouser/.test(f)));
+  } finally {
+    globalThis.fetch = realFetch;
+    for (const k of ["MOUSER_API_KEY", "NEWARK_API_KEY"]) delete process.env[k];
+    Object.assign(process.env, saved);
+  }
+});
