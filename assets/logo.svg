@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0F3D3E"/>
+  <!-- IC package -->
+  <rect x="146" y="146" width="220" height="220" rx="20" fill="#F2C14E"/>
+  <g fill="#E8EDEA">
+    <rect x="186" y="96" width="24" height="50" rx="6"/><rect x="244" y="96" width="24" height="50" rx="6"/><rect x="302" y="96" width="24" height="50" rx="6"/>
+    <rect x="186" y="366" width="24" height="50" rx="6"/><rect x="244" y="366" width="24" height="50" rx="6"/><rect x="302" y="366" width="24" height="50" rx="6"/>
+    <rect x="96" y="186" width="50" height="24" rx="6"/><rect x="96" y="244" width="50" height="24" rx="6"/><rect x="96" y="302" width="50" height="24" rx="6"/>
+    <rect x="366" y="186" width="50" height="24" rx="6"/><rect x="366" y="244" width="50" height="24" rx="6"/><rect x="366" y="302" width="50" height="24" rx="6"/>
+  </g>
+  <!-- magnifier -->
+  <circle cx="242" cy="242" r="56" fill="none" stroke="#0F3D3E" stroke-width="22"/>
+  <line x1="284" y1="284" x2="330" y2="330" stroke="#0F3D3E" stroke-width="26" stroke-linecap="round"/>
+</svg>
