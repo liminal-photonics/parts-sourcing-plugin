@@ -26,6 +26,8 @@ before(async () => {
       if (req.url.startsWith("/newark")) {
         mode.newarkHits = (mode.newarkHits || 0) + 1;
         if (mode.newark === "qps" || (mode.newark === "qps-once" && mode.newarkHits === 1)) return send(403, { error: { code: 403, message: "Account Over Queries Per Second Limit" } }, { "x-mashery-error-code": "ERR_403_DEVELOPER_OVER_QPS", "retry-after": "1" });
+        if (mode.newark === "bare403") return send(403, {});
+        if (mode.newark === "auth403") return send(403, { error: { code: 403, message: "Not Authorized" } }, { "x-mashery-error-code": "ERR_403_NOT_AUTHORIZED" });
         if (mode.newark === "rate") return send(403, { error: { code: 403, message: "Account Over Rate Limit" } }, { "x-mashery-error-code": "ERR_403_DEVELOPER_OVER_RATE" });
         return send(200, { manufacturerPartNumberSearchReturn: { numberOfResults: 0, products: [] } });
       }
@@ -89,4 +91,16 @@ test("MCP: Mouser stock is read only from recognized availability text, never by
     const r = await callTool(DETAILS, { partNumber: "LM358DR", distributors: ["mouser"] });
     assert.equal(r.results.mouser.stock, want, avail);
   }
+});
+
+test("MCP: a Newark 403 with no rate-limit or auth signal is reported neutrally, not as a bad key", async () => {
+  mode = { newark: "bare403" };
+  let r = await callTool(DETAILS, { partNumber: "BSS138", distributors: ["newark"] });
+  let n = r.notes.join(" ");
+  assert.match(n, /Newark/);
+  assert.doesNotMatch(n, /rejected the API key/i);
+  assert.match(n, /try again/i);
+  mode = { newark: "auth403" };
+  r = await callTool(DETAILS, { partNumber: "BSS138", distributors: ["newark"] });
+  assert.match(r.notes.join(" "), /rejected the API key/i);
 });
