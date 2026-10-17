@@ -15,6 +15,8 @@ Price a BOM at the build quantities the user gives, using the `parts-sourcing` M
 4. Build a table per build quantity: line, MPN, qty needed, best in-stock distributor, unit price at the matching break, extended price, stock. Sum the total and the per-board cost.
 5. Flag each line that is:
    - **Single source**: found at only one distributor checked.
+   - **Needs a human check before it goes in the BOM**: any row with `manufacturerConfirmed: false`, `exactMatch: false` or `stockFresh: false` (see `warnings` / `flags`). Report the row, don't price from it.
+   - **Lifecycle**: use `lifecycleStatus`. `unknown` (blank Mouser field, Newark stocking status) is not a clean check; a part clears only with two clean checks from separate sources (`lifecycleSummary.cleanChecks`).
    - **EOL / NRND / obsolete**: any lifecycle value other than Active, or discontinued/end-of-life true. Mouser often leaves lifecycle blank; report that as "not stated", not "Active". Newark's value is a stocking status (e.g. NO_LONGER_STOCKED means Newark stopped stocking it, not that it is EOL).
    - **Low stock**: stock below 2× the quantity needed for the largest build.
    - **Not found**: no match at either distributor.

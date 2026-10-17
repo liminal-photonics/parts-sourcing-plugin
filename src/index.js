@@ -3,6 +3,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { searchParts, getPartDetails, compareDistributors, status } from "./core.js";
+import { pluginVersion, stamp } from "./version.js";
 
 const distributorsProp = {
   type: "array",
@@ -28,12 +29,12 @@ const TOOLS = [
   },
   {
     name: "sourcing_status",
-    description: "Show which distributor API keys are configured.",
+    description: "Show which distributor API keys are configured, and the plugin version and git commit that is running.",
     inputSchema: { type: "object", properties: {} },
   },
 ];
 
-const server = new Server({ name: "parts-sourcing", version: "0.1.0" }, { capabilities: { tools: {} } });
+const server = new Server({ name: "parts-sourcing", version: pluginVersion().version || "0.0.0" }, { capabilities: { tools: {} } });
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: a = {} } = req.params;
@@ -44,6 +45,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     else if (name === "compare_distributors") out = await compareDistributors(a);
     else if (name === "sourcing_status") out = status();
     else throw new Error(`Unknown tool ${name}`);
+    out = stamp(out); // retrievedAt (UTC) and plugin version/gitSha on every result
     return { content: [{ type: "text", text: (() => { const t = JSON.stringify(out, null, 2); return t.length > 40000 ? JSON.stringify(out) : t; })() }] };
   } catch (e) {
     return { isError: true, content: [{ type: "text", text: e.message }] };

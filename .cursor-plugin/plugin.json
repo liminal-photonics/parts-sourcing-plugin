@@ -1,7 +1,7 @@
 {
   "name": "parts-sourcing",
   "displayName": "Parts Sourcing (Digi-Key, Mouser, Newark)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Search, price and compare electronic components across Digi-Key, Mouser and Newark side by side: price breaks, stock, lead time, lifecycle and datasheets. Reports country of origin only when the distributor provides it (Digi-Key's v4 API usually doesn't). Bring your own API keys.",
   "author": {
     "name": "Liminal Photonics"

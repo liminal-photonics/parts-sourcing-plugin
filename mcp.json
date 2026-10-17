@@ -3,7 +3,7 @@
     "parts-sourcing": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "github:liminal-photonics/parts-sourcing-plugin"],
+      "args": ["-y", "github:liminal-photonics/parts-sourcing-plugin#v0.2.0"],
       "env": {
         "DIGIKEY_CLIENT_ID": "${env:DIGIKEY_CLIENT_ID}",
         "DIGIKEY_CLIENT_SECRET": "${env:DIGIKEY_CLIENT_SECRET}",
