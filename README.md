@@ -87,7 +87,7 @@ Set them as environment variables where your agent runs (the plugin's `mcp.json`
 - Part numbers match exactly first. Newark often lists part numbers without punctuation (ERJ-3EKF1002V is ERJ3EKF1002V there), so when there's no exact match the tools also accept a match that ignores punctuation, and say so. Mouser rejects some symbols in keywords, so µ, Ω, ± and ° are converted to u, ohm, +/- and deg for Mouser.
 
 ## Reliability fields (v0.2.0)
-Every tool result carries `retrievedAt` (UTC, ISO 8601) and `plugin: { version, gitSha }`, so a saved result can be dated and traced to the exact build. `gitSha` comes from the npm lockfile that installed the plugin (or `PLUGIN_GIT_SHA`, or the git checkout); it is `"unknown"` only when none of those exist.
+Every tool result carries `retrievedAt` (UTC, ISO 8601) and `plugin: { name, version, gitSha }`, so a saved result can be dated and traced to the exact build. `gitSha` comes from the npm lockfile that installed the plugin (or `PLUGIN_GIT_SHA`, or the git checkout); it is `"unknown"` only when none of those exist.
 
 Per distributor row:
 - `manufacturerConfirmed`: `false` when several manufacturers list the part number on Digi-Key (for example TI and the UMW clone of SN74LVC1G14DBVR) and no other distributor answered to confirm which one is meant (rate-limited, not configured, not stocked, or a Digi-Key-only call). Don't record an unconfirmed row in a BOM or lifecycle check until it matches the schematic's intended maker.
