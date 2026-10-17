@@ -13,7 +13,7 @@ A Grok Bot / Cursor plugin that searches, prices and compares electronic compone
 | `search_parts` | Keyword search on all configured distributors, e.g. `10k resistor 0603 1%` |
 | `get_part_details` | Look up one part by manufacturer or distributor part number |
 | `compare_distributors` | Price at each quantity, stock, lead time, lifecycle, country of origin only when the distributor provides it, datasheet; flags single-source, EOL and zero stock |
-| `sourcing_status` | Shows which API keys are configured |
+| `sourcing_status` | Shows which API keys are configured, plus the plugin `version` and the `gitSha` of the running build |
 
 **Skills**
 
@@ -32,7 +32,7 @@ Install **Parts Sourcing** from the Grok Bot or Cursor plugin marketplace. To ru
   "mcpServers": {
     "parts-sourcing": {
       "command": "npx",
-      "args": ["-y", "github:liminal-photonics/parts-sourcing-plugin"],
+      "args": ["-y", "github:liminal-photonics/parts-sourcing-plugin#v0.2.0"],
       "env": {
         "DIGIKEY_CLIENT_ID": "...",
         "DIGIKEY_CLIENT_SECRET": "...",
@@ -43,6 +43,8 @@ Install **Parts Sourcing** from the Grok Bot or Cursor plugin marketplace. To ru
   }
 }
 ```
+
+The `#v0.2.0` tag pins the build. After this version is merged, the `v0.2.0` tag is created on the merge commit; until then, pin a commit SHA instead (`#<40-character sha>`).
 
 ## API keys (bring your own)
 
@@ -83,6 +85,22 @@ Set them as environment variables where your agent runs (the plugin's `mcp.json`
 - Lead times come straight from each distributor: Digi-Key reports manufacturer lead weeks Mouser reports its own lead-time text, and Newark reports its shortest lead time in days.
 - Digi-Key splits a product into packaging options (cut tape, tape & reel, Digi-Reel). Prices come from the in-stock option a buyer would order (cut tape first, then the lowest minimum order); stock is Digi-Key's product total, because the options share one pool. Each option's stock is listed under `stockByPackaging`. When a part number is shared by several manufacturers, Digi-Key's exact lookup fails, so the tool falls back to keyword search, keeps exact part-number matches only, prefers the manufacturer you can order from stock in small quantities, and lists the others.
 - Part numbers match exactly first. Newark often lists part numbers without punctuation (ERJ-3EKF1002V is ERJ3EKF1002V there), so when there's no exact match the tools also accept a match that ignores punctuation, and say so. Mouser rejects some symbols in keywords, so µ, Ω, ± and ° are converted to u, ohm, +/- and deg for Mouser.
+
+## Reliability fields (v0.2.0)
+Every tool result carries `retrievedAt` (UTC, ISO 8601) and `plugin: { version, gitSha }`, so a saved result can be dated and traced to the exact build. `gitSha` comes from the npm lockfile that installed the plugin (or `PLUGIN_GIT_SHA`, or the git checkout); it is `"unknown"` only when none of those exist.
+
+Per distributor row:
+- `manufacturerConfirmed`: `false` when several manufacturers list the part number on Digi-Key (for example TI and the UMW clone of SN74LVC1G14DBVR) and no other distributor answered to confirm which one is meant (rate-limited, not configured, not stocked, or a Digi-Key-only call). Don't record an unconfirmed row in a BOM or lifecycle check until it matches the schematic's intended maker.
+- `stockFresh`: `false` when Digi-Key stock comes from keyword search (always true for `search_parts`, so treat that stock as indicative) or when the refresh by Digi-Key part number failed or was skipped. `stockNote` says why. A rate limit during the refresh is reported as an error, not hidden.
+- `exactMatch`: `false` when the match only works with punctuation ignored (Newark stores ERJ-3EKF1002V as ERJ3EKF1002V); `matchNote` says what was matched.
+- `lifecycleStatus`: `active`, `nrnd`, `eol`, `preliminary` or `unknown`. Only a status the source **states** counts. A blank Mouser field and Newark's stocking status (STOCKED, DIRECT_SHIP, ...) are `unknown`, never `active`. `cleanLifecycleCheck` is true only for an explicit active status.
+
+`get_part_details` returns `warnings` for rows that need a human check. `compare_distributors` adds those warnings to `flags`, leaves stale, unconfirmed and non-exact rows out of `cheapestInStock`, and returns `lifecycleSummary.cleanChecks` (the distributors whose row is a clean lifecycle check).
+
+Newark answering without its search-results wrapper is reported as an error ("treat Newark as not checked"), not as "no match". Newark stock that isn't a number is `null` ("not stated"), not 0.
+
+### Known-answer check
+`node scripts/known-answer.mjs` runs live checks against the three APIs (keys required): LM358DR and SN74LVC1G14DBVR resolve to Texas Instruments with refreshed stock; a Digi-Key-only call on a multi-maker part is unconfirmed; BAS116LT1G's blank Mouser lifecycle is `unknown`, so it has one clean check (Digi-Key); keyword-search stock is marked stale; a nonexistent part gives clean no-match notes; ERJ-3EKF1002V's Newark match is flagged as not exact. It exits 1 on any failure.
 
 ## Development
 
